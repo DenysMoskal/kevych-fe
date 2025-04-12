@@ -10,10 +10,19 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    try {
+      const userStorage = localStorage.getItem('user-storage');
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (userStorage) {
+        const data = JSON.parse(userStorage);
+        const token = data?.state?.token;
+
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    } catch (error) {
+      console.error('Error processing token:', error);
     }
 
     return config;
@@ -24,17 +33,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !error.config.url.includes('/auth/login') &&
-      !error.config.url.includes('/auth/register')
-    ) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user-storage');
       window.location.href = '/login';
     }
-
     return Promise.reject(error);
   }
 );
