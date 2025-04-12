@@ -8,6 +8,7 @@ import ErrorAlert from '../ui/ErrorAlert';
 import TrainModal from './TrainModal';
 import TrainCard from './TrainCard';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import SearchPanel, { SortByType, SortOrderType } from './SearchPanel';
 import {
   TrainScheduleResponse,
   TrainScheduleFormData,
@@ -18,6 +19,7 @@ import { TransportItem } from '@/types/transport_items';
 import { toast } from 'react-toastify';
 import { ApiError } from '@/types/error';
 import { useUserStore } from '@/store';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const TrainScheduleDashboard = () => {
   const {
@@ -44,14 +46,29 @@ const TrainScheduleDashboard = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortByType>(SortByType.DEPARTURE_TIME);
+  const [sortOrder, setSortOrder] = useState<SortOrderType>(SortOrderType.ASC);
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 1000);
+
   useEffect(() => {
     const fetchSchedules = async () => {
-      await execute(api.get('/train-schedules'));
+      const params = new URLSearchParams();
+
+      if (sortBy) params.append('sortBy', sortBy);
+      if (sortOrder) params.append('sortOrder', sortOrder);
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
+
+      console.log('Fetching with params:', params.toString());
+
+      await execute(api.get(`/train-schedules?${params.toString()}`));
       await stationsExecute(api.get('/transport-items/stations'));
       await trainsExecute(api.get('/transport-items/trains'));
     };
+
     fetchSchedules();
-  }, [execute, stationsExecute, trainsExecute]);
+  }, [sortBy, sortOrder, debouncedSearchTerm]);
 
   const handleEdit = async (schedule: TrainScheduleResponse) => {
     try {
@@ -194,6 +211,15 @@ const TrainScheduleDashboard = () => {
           <span className="text-xl">+</span> Add new
         </button>
       </div>
+
+      <SearchPanel
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+      />
 
       {isLoading && <LoadingSpinner />}
 
