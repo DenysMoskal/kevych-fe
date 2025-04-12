@@ -53,6 +53,15 @@ const TrainScheduleDashboard = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
   useEffect(() => {
+    const fetchData = async () => {
+      await stationsExecute(api.get('/transport-items/stations'));
+      await trainsExecute(api.get('/transport-items/trains'));
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     const fetchSchedules = async () => {
       const params = new URLSearchParams();
 
@@ -60,11 +69,7 @@ const TrainScheduleDashboard = () => {
       if (sortOrder) params.append('sortOrder', sortOrder);
       if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
 
-      console.log('Fetching with params:', params.toString());
-
       await execute(api.get(`/train-schedules?${params.toString()}`));
-      await stationsExecute(api.get('/transport-items/stations'));
-      await trainsExecute(api.get('/transport-items/trains'));
     };
 
     fetchSchedules();
