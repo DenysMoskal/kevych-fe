@@ -12,8 +12,6 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { isAuthenticated } = useUserStore();
   const isHydrated = useUserStore((state) => state._hasHydrated);
 
-  console.log('isAuthenticated:', isAuthenticated, 'isHydrated:', isHydrated);
-
   const router = useRouter();
   const pathname = usePathname();
 
