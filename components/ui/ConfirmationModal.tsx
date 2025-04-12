@@ -10,6 +10,7 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   type?: 'danger' | 'warning' | 'info';
+  isLoading?: boolean;
 }
 
 const ConfirmationModal = ({
@@ -21,6 +22,7 @@ const ConfirmationModal = ({
   onConfirm,
   onCancel,
   type = 'danger',
+  isLoading,
 }: ConfirmationModalProps) => {
   if (!isOpen) return null;
 
@@ -95,7 +97,11 @@ const ConfirmationModal = ({
             className={`cursor-pointer inline-flex w-full justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm ${colors.confirmButton} focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm`}
             onClick={onConfirm}
           >
-            {confirmText}
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-t-4 border-b-4 border-red-200"></div>
+            ) : (
+              confirmText
+            )}
           </button>
           <button
             type="button"

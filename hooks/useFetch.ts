@@ -12,7 +12,7 @@ interface UseFetchResult<T> {
 
 function useFetch<T>(initialData: T | null = null): UseFetchResult<T> {
   const [data, setData] = useState<T | null>(initialData);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
   const reset = useCallback(() => {

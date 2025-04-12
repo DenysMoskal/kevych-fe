@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import TrainScheduleDashboard from '@/app/components/dashboard/TrainScheduleDashboard';
+import TrainScheduleDashboard from '@/components/dashboard/TrainScheduleDashboard';
 
 const Dashboard = () => {
   return (

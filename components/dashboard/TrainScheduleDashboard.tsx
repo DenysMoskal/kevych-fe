@@ -2,12 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/api/axios';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import EmptyState from '../ui/EmptyState';
-import ErrorAlert from '../ui/ErrorAlert';
 import TrainModal from './TrainModal';
 import TrainCard from './TrainCard';
-import ConfirmationModal from '../ui/ConfirmationModal';
 import SearchPanel, { SortByType, SortOrderType } from './SearchPanel';
 import {
   TrainScheduleResponse,
@@ -20,6 +16,10 @@ import { toast } from 'react-toastify';
 import { ApiError } from '@/types/error';
 import { useUserStore } from '@/store';
 import { useDebounce } from '@/hooks/useDebounce';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import ErrorAlert from '../ui/ErrorAlert';
+import EmptyState from '../ui/EmptyState';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const TrainScheduleDashboard = () => {
   const {
@@ -38,6 +38,13 @@ const TrainScheduleDashboard = () => {
   const { data: trains, execute: trainsExecute } = useFetch<TransportItem[]>(
     []
   );
+  const { execute: createScheduleExecute, isLoading: createScheduleLoading } =
+    useFetch();
+  const { execute: updateScheduleExecute, isLoading: updateScheduleLoading } =
+    useFetch();
+
+  const { execute: deleteScheduleExecute, isLoading: deleteScheduleLoading } =
+    useFetch();
 
   const [editingSchedule, setEditingSchedule] =
     useState<TrainScheduleFormData | null>(null);
@@ -120,8 +127,9 @@ const TrainScheduleDashboard = () => {
     if (!scheduleToDelete) return;
 
     try {
-      const response = await api.delete(`/train-schedules/${scheduleToDelete}`);
-      console.log(response);
+      await deleteScheduleExecute(
+        api.delete(`/train-schedules/${scheduleToDelete}`)
+      );
       await execute(api.get('/train-schedules'));
 
       toast.success('Train schedule successfully deleted!');
@@ -172,10 +180,12 @@ const TrainScheduleDashboard = () => {
         apiData.trainNumber = formData.trainNumber;
         apiData.departureStation = formData.from;
         apiData.arrivalStation = formData.to;
-        await api.patch(`/train-schedules/${formData.id}`, apiData);
+        await updateScheduleExecute(
+          api.patch(`/train-schedules/${formData.id}`, apiData)
+        );
         toast.success('Train schedule updated successfully!');
       } else {
-        await api.post('/train-schedules', apiData);
+        await createScheduleExecute(api.post('/train-schedules', apiData));
         toast.success('New train schedule created successfully!');
       }
 
@@ -226,46 +236,54 @@ const TrainScheduleDashboard = () => {
         setSortOrder={setSortOrder}
       />
 
-      {isLoading && <LoadingSpinner />}
+      <div className="min-h-[300px] relative">
+        {isLoading && <LoadingSpinner />}
 
-      {error && <ErrorAlert message={error.message} />}
+        {error && <ErrorAlert message={error.message} />}
 
-      {!isLoading && !error && schedules?.length === 0 && (
-        <EmptyState message="Train schedules are absent" />
-      )}
+        {!isLoading && !error && schedules?.length === 0 && (
+          <EmptyState message="Train schedules are absent" />
+        )}
 
-      {schedules && schedules.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {schedules.map((schedule) => (
-            <TrainCard
-              key={schedule.id}
-              schedule={{
-                id: schedule.id,
-                trainNumber: schedule.trainNumber,
-                trainId: schedule.trainId,
-                from: schedule.departureStation,
-                fromId: schedule.departureStationId,
-                to: schedule.arrivalStation,
-                toId: schedule.arrivalStationId,
-                departure: new Date(schedule.departureTime).toLocaleTimeString(
-                  [],
-                  { hour: '2-digit', minute: '2-digit' }
-                ),
-                arrival: new Date(schedule.arrivalTime).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                }),
-              }}
-              isOwner={schedule.userId === user?.id}
-              onEdit={() => handleEdit(schedule)}
-              onDelete={() => handleDeleteClick(schedule.id)}
-            />
-          ))}
-        </div>
-      )}
+        {!isLoading && schedules && schedules.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {schedules.map((schedule) => (
+              <TrainCard
+                key={schedule.id}
+                schedule={{
+                  id: schedule.id,
+                  trainNumber: schedule.trainNumber,
+                  trainId: schedule.trainId,
+                  from: schedule.departureStation,
+                  fromId: schedule.departureStationId,
+                  to: schedule.arrivalStation,
+                  toId: schedule.arrivalStationId,
+                  departure: new Date(
+                    schedule.departureTime
+                  ).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                  arrival: new Date(schedule.arrivalTime).toLocaleTimeString(
+                    [],
+                    {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }
+                  ),
+                }}
+                isOwner={schedule.userId === user?.id}
+                onEdit={() => handleEdit(schedule)}
+                onDelete={() => handleDeleteClick(schedule.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {isModalOpen && (
         <TrainModal
+          isLoading={createScheduleLoading || updateScheduleLoading}
           schedule={editingSchedule}
           stations={stations || []}
           trains={trains || []}
@@ -283,6 +301,7 @@ const TrainScheduleDashboard = () => {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         type="danger"
+        isLoading={deleteScheduleLoading}
       />
     </div>
   );
